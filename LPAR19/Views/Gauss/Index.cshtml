@@ -1,0 +1,31 @@
+﻿@model  LPAR19.Models.GaussData 
+@{
+    ViewData["Title"] = "Index";
+}
+<h1>Index</h1>
+<form enctype="multipart/form-data" method="post" action="/Gauss/Gauss">
+    <div class="row">
+        <div class="col-md-12">
+            <dl>
+                <dt>
+                    <label asp-for="FormFile"></label>
+                </dt>
+                <dd>
+                    <input asp-for="FormFile" type="file">
+                </dd>
+            </dl>
+            @*<input asp-page-handler="Upload" class="btn" type="submit" value="Upload">*@
+            <input type="submit" value="Upload" class="btn btn-info" />
+        </div>
+    </div>
+    @foreach (var rw in Model.Images)
+    {
+        <div class="row">
+            <figure class="figure">
+                <img src="@rw.Data" alt="Img" class="figure-img img-thumbnail">
+                <figcaption class="figure-caption text-left">@rw.ImageName</figcaption>
+            </figure>
+            </div>
+    }
+    </form>
+
