@@ -48,12 +48,14 @@ public class LicensePlateDetector : DisposableObject
   List<RotatedRect> detectedLicensePlateRegionList)
     {
         List<String> licenses = new List<String>();
+        using(Mat threshold=new Mat())
         using (Mat gray = new Mat())
         using (Mat canny = new Mat())
         using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
         {
-            CvInvoke.CvtColor(img, gray, ColorConversion.Bgr2Gray);
-            CvInvoke.Canny(gray, canny, 200, 150, 3, false);
+            CvInvoke.Threshold(img, threshold, 100, 255, ThresholdType.BinaryInv);
+            CvInvoke.CvtColor(threshold, gray, ColorConversion.Bgr2Gray);
+            CvInvoke.Canny(gray, canny, 100, 150, 3, false);
             int[,] hierachy = CvInvoke.FindContourTree(canny, contours, ChainApproxMethod.ChainApproxSimple);
 
             FindLicensePlate(contours, hierachy, 0, gray, canny, licensePlateImagesList, filteredLicensePlateImagesList, detectedLicensePlateRegionList, licenses);
@@ -90,9 +92,9 @@ public class LicensePlateDetector : DisposableObject
 
             using (VectorOfPoint contour = contours[idx])
             {
-                if (CvInvoke.ContourArea(contour) > 400)
+                if (CvInvoke.ContourArea(contour) > 250)
                 {
-                    if (numberOfChildren < 3)
+                    if (numberOfChildren < 6)
                     {
                         //If the contour has less than 3 children, it is not a license plate (assuming license plate has at least 3 charactor)
                         //However we should search the children of this contour to see if any of them is a license plate
@@ -152,7 +154,7 @@ public class LicensePlateDetector : DisposableObject
                         CvInvoke.Resize(tmp1, tmp2, newSize, 0, 0, Inter.Cubic);
 
                         //removes some pixels from the edge
-                        int edgePixelSize = 5;
+                        int edgePixelSize = 1;
                         Rectangle newRoi = new Rectangle(new Point(edgePixelSize, edgePixelSize),
                           tmp2.Size - new Size(2 * edgePixelSize, 2 * edgePixelSize));
                         UMat plate = new UMat(tmp2, newRoi);

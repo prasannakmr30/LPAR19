@@ -1,5 +1,6 @@
 ﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Emgu.CV.OCR;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using LPAR19.LPARCode;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Text;
 
 namespace LPAR19.Controllers
 {
@@ -30,12 +32,67 @@ namespace LPAR19.Controllers
             {
                 if (ms != null)
                 {
+                    CvInvoke.UseOpenCL = true;
                     uploadFile.FormFile.CopyTo(ms);
                     byte[] fileBytes = ms.ToArray();
                     imgg = processCaptured.GetImageFromStream(ms);
-                    Mat im = imgg.Mat;
-                    finalImg = imgg.Mat;
-                    stepData = AddData(stepData, im, "Orginal");
+                    finalImg = imgg.Mat.Clone();
+                    stepData = AddData(stepData, finalImg, "Orginal");                   
+                        using (Mat im = imgg.Mat)
+                        {
+                            using (Mat threshold = new Mat())
+                            {
+                                using (Mat gray = new Mat())
+                                {
+                                    using (Mat canny = new Mat())
+                                    {
+                                        using (Mat rectImg = new Mat())
+                                        {
+                                            CvInvoke.Threshold(im, threshold, 100, 255, ThresholdType.BinaryInv);
+                                            stepData = AddData(stepData, threshold, "Threshold");
+
+                                            CvInvoke.CvtColor(threshold, gray, ColorConversion.Bgr2Gray);
+                                            stepData = AddGrayData(stepData, gray, "Gray");
+
+                                            CvInvoke.Canny(gray, canny, 100, 50, 7);
+                                            stepData = AddData(stepData, canny, "Canny");
+
+                                            List<RotatedRect> rect = new List<RotatedRect>();
+                                            rect = Contours(canny);
+
+                                            if (rect != null && rect.Count > 0)
+                                                foreach (RotatedRect boxr in rect)
+                                                {
+                                                    CvInvoke.Polylines(finalImg, Array.ConvertAll(boxr.GetVertices(), Point.Round), true,
+                                                        new Bgr(Color.DarkOrange).MCvScalar, 2);
+                                                }
+                                            stepData = AddData(stepData, finalImg, "With Rectangle");
+
+                                            List<Mat> mat = RoI(rect, gray);
+                                            int i = 0;
+                                        //OCR 
+                                        string path = AppContext.BaseDirectory;
+                                        Tesseract _ocr = new Tesseract(path, "eng", OcrEngineMode.TesseractLstmCombined);
+                                        _ocr.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ-1234567890");
+                                        foreach (Mat m in mat)
+                                            {
+                                                i += 1;
+                                                _ocr.SetImage(m);
+                                                _ocr.Recognize();
+                                                Tesseract.Character[] words = _ocr.GetCharacters();
+                                            //string wor=words.
+                                                StringBuilder sb = new StringBuilder();
+                                                foreach(var c in words)
+                                                {
+                                                    sb.Append(c.Text);
+                                                }
+                                            stepData = AddData(stepData, m, i.ToString(),sb.ToString());
+                                        }
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                     //Mat blur = new Mat();
                     //blur = Blur(im);
@@ -45,31 +102,35 @@ namespace LPAR19.Controllers
                     //gray = Gray(blur);
                     //stepData = AddData(stepData, gray, "Gray");
 
-                    Mat threshold = new Mat();
-                    threshold = Threshold(im);
-                    stepData = AddData(stepData, threshold, "Threshold");
+                    //Mat threshold = new Mat();
+                    //threshold = Threshold(im);
+                    //stepData = AddData(stepData, threshold, "Threshold");
 
-                    Mat gray = new Mat();
-                    gray = Gray(threshold);
-                    stepData = AddData(stepData, gray, "Gray");
+                    //Mat gray = new Mat();
+                    //gray = Gray(threshold);
+                    //stepData = AddGrayData(stepData, gray, "Gray");
 
-                    Mat canny = new Mat();
-                    canny = Canny(gray);
-                    stepData = AddData(stepData, canny, "Canny");
-
-
+                    //Mat canny = new Mat();
+                    //canny = Canny(gray);
+                    //stepData = AddData(stepData, canny, "Canny");
 
 
+                    //List<RotatedRect> rect = new List<RotatedRect>();
+                    //rect = Contours(canny);
 
-                    List<RotatedRect> rect = new List<RotatedRect>();
-                    rect = Contours(canny);
+                    //Mat rectImg = new Mat();
 
-                    Mat rectImg = new Mat();
+                    //rectImg = DrawRect(imgg.Mat, rect);
+                    //stepData = AddData(stepData, rectImg, "With Rectangle");
 
-                    rectImg = DrawRect(finalImg, rect);
-                    stepData = AddData(stepData, rectImg, "With Rectangle");
+                    //List<Mat> mat = RoI(rect, threshold.Clone());
 
-
+                    //int i = 0;
+                    //foreach (Mat m in mat)
+                    //{
+                    //    i += 1;
+                    //    stepData = AddData(stepData, m, i.ToString());
+                    //}
                 }
             }
             #region Old
@@ -175,11 +236,27 @@ namespace LPAR19.Controllers
         }
 
 
-        private StepData AddData(StepData step,Mat image,string Name)
+        private StepData AddData(StepData step, Mat image, string Name,string text=null)
         {
-            Image<Bgr, byte> img = image.ToImage<Bgr, byte>();
-            Byte[] Tbytes = img.ToJpegData();
-            step.Images.Add(new Images { Data = "data:image/jpg;base64," + Convert.ToBase64String(Tbytes, 0, Tbytes.Length),ImageName=Name });
+            Byte[] Tbytes = null;
+            if (!image.Size.IsEmpty)
+            {
+                Image<Bgr, byte> img = image.ToImage<Bgr, byte>();
+                Tbytes = img.ToJpegData();
+                step.Images.Add(new Images { Data = "data:image/jpg;base64," + Convert.ToBase64String(Tbytes, 0, Tbytes.Length), ImageName = Name,Text=text });
+            }
+          return step;
+        }
+        private StepData AddGrayData(StepData step, Mat image, string Name)
+        {
+            //if (!image.IsEmpty)
+            //{
+                Byte[] Tbytes = null;
+                Image<Gray, byte> img = image.ToImage<Gray, byte>();
+                Tbytes = img.ToJpegData();
+                step.Images.Add(new Images { Data = "data:image/jpg;base64," + Convert.ToBase64String(Tbytes, 0, Tbytes.Length), ImageName = Name });
+
+            //}
             return step;
         }
 
@@ -198,7 +275,7 @@ namespace LPAR19.Controllers
         private Mat Canny(Mat img)
         {
             Mat output = new Mat();
-            CvInvoke.Canny(img, output,100,50,3);
+            CvInvoke.Canny(img, output, 100, 50, 3);
             return output;
         }
 
@@ -206,7 +283,7 @@ namespace LPAR19.Controllers
         {
             Mat output = new Mat();
             ScalarArray elem = new ScalarArray(0);
-            CvInvoke.Dilate(img, output, elem, new Point(-1,-1),1,BorderType.Default,new MCvScalar(255,255,255));
+            CvInvoke.Dilate(img, output, elem, new Point(-1, -1), 1, BorderType.Default, new MCvScalar(255, 255, 255));
             return output;
         }
 
@@ -222,11 +299,11 @@ namespace LPAR19.Controllers
                     CvInvoke.FindContours(img, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
                     //for (int i = 0; i < hierachy.GetLength(0); i++)
                     int count = contours.Size;
-                   
+
                     for (int i = 0; i < count; i++)
                     {
                         CvInvoke.ApproxPolyDP(contours[i], approxContour, CvInvoke.ArcLength(contours[i], true) * 0.05, true);
-                        if (CvInvoke.ContourArea(approxContour, false) > 100)
+                        if (CvInvoke.ContourArea(approxContour, false) > 200)
                         {
                             //    if (approxContour.Size <=6) //The contour has 4 vertices.
                             //    {
@@ -254,27 +331,70 @@ namespace LPAR19.Controllers
                     }
 
                 }
-               
+
             }
             return boxList;
         }
 
-        private Mat DrawRect(Mat img,List<RotatedRect> rect)
+        private Mat DrawRect(Mat img, List<RotatedRect> rect)
         {
-            if(rect !=null && rect.Count>0)
-            foreach (RotatedRect boxr in rect)
-            {
-                CvInvoke.Polylines(img, Array.ConvertAll(boxr.GetVertices(), Point.Round), true,
-                    new Bgr(Color.DarkOrange).MCvScalar, 2);
-            }
+            if (rect != null && rect.Count > 0)
+                foreach (RotatedRect boxr in rect)
+                {
+                    CvInvoke.Polylines(img, Array.ConvertAll(boxr.GetVertices(), Point.Round), true,
+                        new Bgr(Color.DarkOrange).MCvScalar, 2);
+                }
             return img;
         }
 
         private Mat Threshold(Mat img)
         {
             Mat output = new Mat();
-            CvInvoke.Threshold(img, output, 100, 255, ThresholdType.Binary);
+            CvInvoke.Threshold(img, output, 100, 255, ThresholdType.BinaryInv);
             return output;
+        }
+
+        private List<Mat> RoI(List<RotatedRect> rect, Mat img)
+        {
+            List<Mat> mat = new List<Mat>();
+
+            foreach (var rr in rect)
+            {
+                RotatedRect box = rr;
+                if (box.Angle < -45.0)
+                {
+                    float tmp = box.Size.Width;
+                    box.Size.Width = box.Size.Height;
+                    box.Size.Height = tmp;
+                    box.Angle += 90.0f;
+                }
+                else if (box.Angle > 45.0)
+                {
+                    float tmp = box.Size.Width;
+                    box.Size.Width = box.Size.Height;
+                    box.Size.Height = tmp;
+                    box.Angle -= 90.0f;
+                }
+                using (Mat thresh = new Mat())
+                using (Mat tmp1 = new Mat())
+                using (Mat tmp2 = new Mat())
+                {
+                    PointF[] srcCorners = box.GetVertices();
+                    PointF[] destCorners = new PointF[] { new PointF(0, box.Size.Height - 1), new PointF(0, 0), new PointF(box.Size.Width - 1, 0), new PointF(box.Size.Width - 1, box.Size.Height - 1) };
+
+                    using (Mat rot = CvInvoke.GetAffineTransform(srcCorners, destCorners))
+                    {
+                        CvInvoke.WarpAffine(img, tmp1, rot, Size.Round(box.Size));
+                    }
+                    Size approxSize = new Size(500, 500);
+                    double scale = Math.Min(approxSize.Width / box.Size.Width, approxSize.Height / box.Size.Height);
+                    Size newSize = new Size((int)Math.Round(box.Size.Width * scale), (int)Math.Round(box.Size.Height * scale));
+                    CvInvoke.Resize(tmp1, tmp2, newSize, 0, 0, Inter.Cubic);
+                    CvInvoke.Threshold(tmp2, thresh, 100, 255, ThresholdType.BinaryInv);
+                    mat.Add(thresh.Clone());
+                }
+            }
+            return mat;
         }
     }
 }

@@ -1,6 +1,11 @@
-﻿using LPAR19.Models;
+﻿using Emgu.CV;
+using Emgu.CV.OCR;
+using Emgu.CV.Structure;
+using LPAR19.LPARCode;
+using LPAR19.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Diagnostics;
 
 namespace LPAR19.Controllers
@@ -16,16 +21,16 @@ namespace LPAR19.Controllers
 
         public IActionResult Index()
         {
-            //string path = AppContext.BaseDirectory;
-            //ProcessCaptured processCaptured = new ProcessCaptured();
-            //////string path = server.Map
-            ////var _ocr = new Tesseract(path, "eng", OcrEngineMode.Default);
-            ////Image<Bgr, Byte> imgg = new Image<Bgr, byte>(path + "\\Untitled.png");
-            //Image<Bgr, Byte> imgg = new Image<Bgr, byte>(path + "\\eucar.jpg");
-            //processCaptured.ProcessImage(imgg);
-            ////_ocr.SetImage(imgg);
-            ////_ocr.Recognize();
-            ////var result = _ocr.GetCharacters();
+            string path = AppContext.BaseDirectory;
+            ProcessCaptured processCaptured = new ProcessCaptured();
+            ////string path = server.Map
+            var _ocr = new Tesseract(path, "eng", OcrEngineMode.Default);
+            //Image<Bgr, Byte> imgg = new Image<Bgr, byte>(path + "\\Untitled.png");
+            Image<Bgr, Byte> imgg = new Image<Bgr, byte>(path + "\\eucar.jpg");
+            processCaptured.ProcessImage(imgg);
+            _ocr.SetImage(imgg);
+            _ocr.Recognize();
+            var result = _ocr.GetCharacters();
             return View();
         }
 

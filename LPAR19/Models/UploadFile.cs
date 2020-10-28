@@ -53,5 +53,6 @@ namespace LPAR19.Models
     {
         public string Data { get; set; }
         public string ImageName { get; set; }
+        public string Text { get; set; }
     }
 }
