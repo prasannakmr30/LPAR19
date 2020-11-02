@@ -19,7 +19,7 @@ namespace LPAR19.Controllers
 
         public IActionResult Gauss(GaussData GaussData)
         {
-            Image<Bgr, Byte> img = null;
+            Image<Bgra, Byte> img = null;
             Mat GaussImg = new Mat();
             Mat GrayImg = new Mat();
             Mat SobalImg = new Mat();

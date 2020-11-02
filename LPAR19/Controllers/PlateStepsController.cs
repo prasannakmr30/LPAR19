@@ -5,12 +5,16 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using LPAR19.LPARCode;
 using LPAR19.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
+using System.Net.Http;
+using System.Linq;
 
 namespace LPAR19.Controllers
 {
@@ -26,7 +30,7 @@ namespace LPAR19.Controllers
         {
             StepData stepData = new StepData();
             ProcessCaptured processCaptured = new ProcessCaptured();
-            Image<Bgr, Byte> imgg = null;
+            Image<Bgra, Byte> imgg = null;
             Mat finalImg = new Mat();
             using (MemoryStream ms = new MemoryStream())
             {
@@ -235,7 +239,82 @@ namespace LPAR19.Controllers
             return View("Index", stepData);
         }
 
+        public StepData StepsVideo(string uploadFile)
+        {
+            StepData stepData = new StepData();
+            ProcessCaptured processCaptured = new ProcessCaptured();
+            Image<Bgra, Byte> imgg = null;
+            Mat finalImg = new Mat();
+            if (!string.IsNullOrWhiteSpace(uploadFile))
+            {
+                byte[] fileBytes = Convert.FromBase64String(uploadFile);
+                using (MemoryStream ms = new MemoryStream(fileBytes))
+                {
+                    imgg = processCaptured.GetImageFromStream(ms);
+                    finalImg = imgg.Mat.Clone();
+                    //stepData = AddData(stepData, finalImg.Clone(), "Orginal");
+                    using (Mat im = imgg.Mat.Clone())
+                    {
+                        using (Mat threshold = new Mat())
+                        {
+                            using (Mat gray = new Mat())
+                            {
+                                using (Mat canny = new Mat())
+                                {
+                                    using (Mat rectImg = new Mat())
+                                    {
+                                        CvInvoke.Threshold(im, threshold, 100, 255, ThresholdType.BinaryInv);
+                                        //stepData = AddData(stepData, threshold, "Threshold");
 
+                                        CvInvoke.CvtColor(threshold, gray, ColorConversion.Bgr2Gray);
+                                        //stepData = AddGrayData(stepData, gray, "Gray");
+
+                                        CvInvoke.Canny(gray, canny, 100, 50, 7);
+                                        //stepData = AddData(stepData, canny, "Canny");
+
+                                        List<RotatedRect> rect = new List<RotatedRect>();
+                                        rect = Contours(canny);
+
+                                        if (rect != null && rect.Count > 0)
+                                            foreach (RotatedRect boxr in rect)
+                                            {
+                                                CvInvoke.Polylines(finalImg, Array.ConvertAll(boxr.GetVertices(), Point.Round), true,
+                                                    new Bgr(Color.DarkOrange).MCvScalar, 2);
+                                            }
+                                        //stepData = AddData(stepData, finalImg, "With Rectangle");
+
+                                        List<Mat> mat = RoI(rect, gray);
+                                        int i = 0;
+                                        //OCR 
+                                        string path = AppContext.BaseDirectory;
+                                        Tesseract _ocr = new Tesseract(path, "eng", OcrEngineMode.TesseractLstmCombined);
+                                        _ocr.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
+                                        foreach (Mat m in mat)
+                                        {
+                                            i += 1;
+                                            _ocr.SetImage(m);
+                                            _ocr.Recognize();
+                                            Tesseract.Character[] words = _ocr.GetCharacters();
+                                            //string wor=words.
+                                            StringBuilder sb = new StringBuilder();
+                                            foreach (var c in words)
+                                            {
+                                                sb.Append(c.Text);
+                                            }
+                                            if (sb.Length > 3 && sb.Length < 10 && !sb.ToString().Contains(' ') && (sb.ToString().Equals("LMN703") || sb.ToString().Equals("ARH001")))
+                                                stepData = AddData(stepData, m, i.ToString(), sb.ToString());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }                  
+                }
+            }
+            //return View("Index", stepData);
+            finalImg = null;
+            return stepData;
+        }
         private StepData AddData(StepData step, Mat image, string Name,string text=null)
         {
             Byte[] Tbytes = null;
@@ -243,7 +322,9 @@ namespace LPAR19.Controllers
             {
                 Image<Bgr, byte> img = image.ToImage<Bgr, byte>();
                 Tbytes = img.ToJpegData();
-                step.Images.Add(new Images { Data = "data:image/jpg;base64," + Convert.ToBase64String(Tbytes, 0, Tbytes.Length), ImageName = Name,Text=text });
+                var exist = step.Images.Where(c => c.Text == text).ToList();
+                if (exist.Count<=0)
+                    step.Images.Add(new Images { Data = "data:image/jpg;base64," + Convert.ToBase64String(Tbytes, 0, Tbytes.Length), ImageName = Name,Text=text });
             }
           return step;
         }
@@ -375,26 +456,31 @@ namespace LPAR19.Controllers
                     box.Size.Height = tmp;
                     box.Angle -= 90.0f;
                 }
-                using (Mat thresh = new Mat())
-                using (Mat tmp1 = new Mat())
-                using (Mat tmp2 = new Mat())
-                {
-                    PointF[] srcCorners = box.GetVertices();
-                    PointF[] destCorners = new PointF[] { new PointF(0, box.Size.Height - 1), new PointF(0, 0), new PointF(box.Size.Width - 1, 0), new PointF(box.Size.Width - 1, box.Size.Height - 1) };
-
-                    using (Mat rot = CvInvoke.GetAffineTransform(srcCorners, destCorners))
+                //double whRatio = (double)box.Size.Width / box.Size.Height;
+                //if (!(2.0 < whRatio && whRatio < 8.0))
+                //{
+                    using (Mat thresh = new Mat())
+                    using (Mat tmp1 = new Mat())
+                    using (Mat tmp2 = new Mat())
                     {
-                        CvInvoke.WarpAffine(img, tmp1, rot, Size.Round(box.Size));
+                        PointF[] srcCorners = box.GetVertices();
+                        PointF[] destCorners = new PointF[] { new PointF(0, box.Size.Height - 1), new PointF(0, 0), new PointF(box.Size.Width - 1, 0), new PointF(box.Size.Width - 1, box.Size.Height - 1) };
+
+                        using (Mat rot = CvInvoke.GetAffineTransform(srcCorners, destCorners))
+                        {
+                            CvInvoke.WarpAffine(img, tmp1, rot, Size.Round(box.Size));
+                        }
+                        Size approxSize = new Size(600, 600);
+                        double scale = Math.Min(approxSize.Width / box.Size.Width, approxSize.Height / box.Size.Height);
+                        Size newSize = new Size((int)Math.Round(box.Size.Width * scale), (int)Math.Round(box.Size.Height * scale));
+                        CvInvoke.Resize(tmp1, tmp2, newSize, 0, 0, Inter.Cubic);
+                        CvInvoke.Threshold(tmp2, thresh, 100, 255, ThresholdType.BinaryInv);
+                        mat.Add(thresh.Clone());
                     }
-                    Size approxSize = new Size(500, 500);
-                    double scale = Math.Min(approxSize.Width / box.Size.Width, approxSize.Height / box.Size.Height);
-                    Size newSize = new Size((int)Math.Round(box.Size.Width * scale), (int)Math.Round(box.Size.Height * scale));
-                    CvInvoke.Resize(tmp1, tmp2, newSize, 0, 0, Inter.Cubic);
-                    CvInvoke.Threshold(tmp2, thresh, 100, 255, ThresholdType.BinaryInv);
-                    mat.Add(thresh.Clone());
-                }
+                //}
             }
             return mat;
         }
+
     }
 }

@@ -2,32 +2,119 @@
 @{
     ViewData["Title"] = "Index";
 }
+<script src="~/js/processing.js"></script>
+
+
 
 <h1>Index</h1>
-<form enctype="multipart/form-data" method="post" action="/PlateSteps/Steps">
-    <div class="row">
-        <div class="col-md-12">
-            <dl>
-                <dt>
-                    <label asp-for="FormFile"></label>
-                </dt>
-                <dd>
-                    <input asp-for="FormFile" type="file">
-                </dd>
-            </dl>
-            @*<input asp-page-handler="Upload" class="btn" type="submit" value="Upload">*@
-            <input type="submit" value="Upload" class="btn btn-info" />
-        </div>
+
+<div class="row">
+    <div class="col-sm-12 col-md-6">
+        <video id="my-video" controls="true" width="700" height="400" crossorigin="anonymous">
+            @*<source src="http://jplayer.org/video/webm/Big_Buck_Bunny_Trailer.webm" type="video/webm">*@
+            @*<source src="http://jplayer.org/video/m4v/Big_Buck_Bunny_Trailer.m4v" type="video/mp4">*@
+            <source src="~/video/ANPR.mp4" type="video/mp4">
+        </video>
+        <canvas id="my-canvas" width="700" height="400" style="display:none"></canvas>
     </div>
-    @foreach (var rw in Model.Images)
-    {
-        <div class="row">
-            <figure class="figure">
-                <img src="@rw.Data" alt="Img" class="figure-img img-thumbnail">
-                <figcaption class="figure-caption text-left">@rw.ImageName</figcaption>
-                <figcaption class="figure-caption text-right">@rw.Text</figcaption>
-            </figure>
-        </div>
+</div>
+<div class="row">
+    <table id="tabData" class="tabel table-responsive">
+        <tr>
+           <th>Image</th>
+           <th>Number</th>
+        </tr>
+    </table>
+</div>
+
+<script>
+    var processor = {
+        timerCallback: function () {
+            if (this.video.paused || this.video.ended) {
+                return;
+            }
+            this.computeFrame();
+            var self = this;
+            setTimeout(function () {
+                self.timerCallback();
+            }, 16); // roughly 60 frames per second
+        },
+
+        doLoad: function () {
+            this.video = document.getElementById("my-video");
+            this.c1 = document.getElementById("my-canvas");
+            this.ctx1 = this.c1.getContext("2d");
+            var self = this;
+
+            this.video.addEventListener("play", function () {
+                self.width = self.video.width;
+                self.height = self.video.height;
+                self.timerCallback();
+            }, false);
+        },
+
+        computeFrame: function () {
+            this.ctx1.drawImage(this.video, 0, 0, this.width, this.height);
+            var frame = this.ctx1.getImageData(0, 0, this.width, this.height);
+            //var d = this.c1.getImageData();
+            var d = this.c1.toDataURL();
+            d = d.replace(/^data:image\/[a-z]+;base64,/, "");
+            $.post("PlateSteps/StepsVideo", { uploadFile: d }, function (data) { DrawImg(data); });
+            return;
+        }
+    };
+
+
+    function DrawImg(data) {
+        const tab = document.getElementById("tabData");
+        const td = document.createElement("td");
+        const tr = document.createElement("tr");
+        for (var img in data.images) {
+            var imagem = document.createElement("img");
+            imagem.style = "width:480px;height=270px";
+            imagem.src = data.images[img].data;
+            var row = tr.cloneNode();
+            var col1 = td.cloneNode();
+            col1.appendChild(imagem);
+            var col2 = td.cloneNode();
+            console.log(data.images[img]);
+            col2.innerHTML = '<b>' + data.images[img].text;
+            row.appendChild(col1);
+            row.appendChild(col2);
+            tab.appendChild(row);
+        }
     }
-</form>
+
+    processor.doLoad();
+</script>
+
+
+
+
+    @*<form enctype="multipart/form-data" method="post" action="/PlateSteps/Steps">
+
+            <div class="row">
+                <div class="col-md-12">
+                    <dl>
+                        <dt>
+                            <label asp-for="FormFile"></label>
+                        </dt>
+                        <dd>
+                            <input asp-for="FormFile" type="file">
+                        </dd>
+                    </dl>
+                    <input type="submit" value="Upload" class="btn btn-info" />
+                </div>
+            </div>
+            @foreach (var rw in Model.Images)
+            {
+                <div class="row">
+                    <figure class="figure">
+                        <img src="@rw.Data" alt="Img" class="figure-img img-thumbnail">
+                        <figcaption class="figure-caption text-left">@rw.ImageName</figcaption>
+                        <figcaption class="figure-caption text-right">@rw.Text</figcaption>
+                    </figure>
+                </div>
+            }
+        </form>*@
 

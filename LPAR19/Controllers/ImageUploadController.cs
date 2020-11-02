@@ -26,7 +26,7 @@ namespace LPAR19.Controllers
                 byte[] fileBytes = ms.ToArray();
                 ProcessCaptured processCaptured = new ProcessCaptured();
                 var image = Image.FromStream(ms);
-                Image<Bgr, Byte> imgg = processCaptured.GetImageFromStream(ms);
+                Image<Bgra, Byte> imgg = processCaptured.GetImageFromStream(ms);
                 updata = processCaptured.ProcessImage(imgg);
             }
             return View("Index", updata);

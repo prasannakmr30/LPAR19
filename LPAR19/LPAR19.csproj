@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="wwwroot\video\ANPR.mp4" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.4.0.4099" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.4" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />

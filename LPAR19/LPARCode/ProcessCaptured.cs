@@ -2,9 +2,11 @@
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using LPAR19.Models;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 
 namespace LPAR19.LPARCode
@@ -48,27 +50,25 @@ namespace LPAR19.LPARCode
             return uploadFile;
         }
 
-        public Image<Bgr, byte> GetImageFromStream(MemoryStream ms)
+        public Image<Bgra, byte> GetImageFromStream(MemoryStream ms)
         {
             int stride = 0;
-            Image<Bgr, byte> cvImage = null;
+            Image<Bgra, byte> cvImage = null;
             Bitmap bmp = new Bitmap(ms);
             System.Drawing.Rectangle rect = new System.Drawing.Rectangle(0, 0, bmp.Width, bmp.Height);
             System.Drawing.Imaging.BitmapData bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, bmp.PixelFormat);
             System.Drawing.Imaging.PixelFormat pf = bmp.PixelFormat;
-            if (pf == System.Drawing.Imaging.PixelFormat.Format32bppArgb)
-            {
-                stride = bmp.Width * 4;
-            }
-            else
-            {
-                stride = bmp.Width * 3;
-            }
-            cvImage = new Image<Bgr, byte>(bmp.Width, bmp.Height, stride, (IntPtr)bmpData.Scan0);
-            bmp.UnlockBits(bmpData);
+                        if (pf == System.Drawing.Imaging.PixelFormat.Format32bppArgb)
+                        {
+                            stride = bmp.Width * 4;
+                        }
+                        else
+                        {
+                            stride = bmp.Width * 3;
+                        }
+                        cvImage = new Image<Bgra, byte>(bmp.Width, bmp.Height, stride, (IntPtr)bmpData.Scan0);
+                        bmp.UnlockBits(bmpData);
             return cvImage;
         }
-
-
     }
 }
