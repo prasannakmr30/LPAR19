@@ -20,6 +20,7 @@ namespace LPAR19.Controllers
 {
     public class PlateStepsController : Controller
     {
+        public static StepData stepData = new StepData();
         public IActionResult Index()
         {
             StepData StepData = new StepData();
@@ -137,111 +138,12 @@ namespace LPAR19.Controllers
                     //}
                 }
             }
-            #region Old
-            //Image<Bgr, Byte> imgg = null;
-            //Image<Bgr, byte> tempImg = null;
-            //Image<Gray, Byte> GrayImg = null;
-            //Image<Gray, Byte> CannyImgTemp = null;
-            //Image<Bgr, Byte> CannyImg = null;
-            //Image<Bgr, byte> temp = null;
-            //int[,] hierachy = null;
-            //List<VectorOfPoint> box = new List<VectorOfPoint>();
-            //List<RotatedRect> boxList = new List<RotatedRect>();
-            //CvInvoke.UseOpenCL = true;
-            //using (MemoryStream ms = new MemoryStream())
-            //{
-            //    if (ms != null)
-            //    {
-            //        uploadFile.FormFile.CopyTo(ms);
-            //        byte[] fileBytes = ms.ToArray();
-            //        imgg = processCaptured.GetImageFromStream(ms);
-            //        Mat im = imgg.Mat;
-            //        stepData = AddData(stepData, im, "Orginal");
-            //        tempImg = imgg.Copy();
-            //    }
-            //}
-            //using (Mat blur = new Mat())
-            //{
-            //    using (Mat gray = new Mat())
-            //    {
-            //        using (Mat canny = new Mat())
-            //        {
-            //            Size kSize = new Size(3, 3);
-            //           // CvInvoke.GaussianBlur(imgg, blur, kSize, 0);
-            //            CvInvoke.Threshold(imgg, blur, 50, 255, ThresholdType.Binary);
-            //            //CvInvoke.BilateralFilter(imgg, blur, -1, -1, 100);
-            //            stepData = AddData(stepData, blur, "Gray");
-
-            //            CvInvoke.Threshold(imgg, gray,50, 255, ThresholdType.Binary);
-            //            //CvInvoke.CvtColor(blur, gray, ColorConversion.Bgr2Gray);
-
-            //            stepData = AddData(stepData, gray, "Threshold");
-
-
-
-            //            CvInvoke.Canny(imgg, canny, 100, 50, 3, false);
-            //            CannyImgTemp = canny.ToImage<Gray, byte>();
-            //            stepData = AddData(stepData, gray, "canny");
-
-            //            //Find the Rectangle
-
-            //            using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
-            //            {
-            //                using (VectorOfPoint approxContour = new VectorOfPoint())
-            //                {
-            //                    //hierachy = CvInvoke.FindContourTree(canny, contours, ChainApproxMethod.ChainApproxSimple);
-            //                    CvInvoke.FindContours(canny, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
-            //                    //for (int i = 0; i < hierachy.GetLength(0); i++)
-            //                    int count = contours.Size;
-            //                    for (int i = 0; i < count; i++)
-            //                    {
-            //                        CvInvoke.ApproxPolyDP(contours[i], approxContour, CvInvoke.ArcLength(contours[i], true) * 0.05, true);
-            //                        if (CvInvoke.ContourArea(approxContour, false) > 250)
-            //                        {
-            //                        //    if (approxContour.Size <=6) //The contour has 4 vertices.
-            //                        //    {
-            //                                //#region determine if all the angles in the contour are within [80, 100] degree
-            //                                //bool isRectangle = true;
-            //                                //Point[] pts = approxContour.ToArray();
-            //                                //LineSegment2D[] edges = PointCollection.PolyLine(pts, true);
-
-            //                                //for (int j = 0; j < edges.Length; j++)
-            //                                //{
-            //                                //    double angle = Math.Abs(
-            //                                //        edges[(j + 1) % edges.Length].GetExteriorAngleDegree(edges[j]));
-            //                                //    if (angle < 80 || angle > 100)
-            //                                //    {
-            //                                //        isRectangle = false;
-            //                                //        break;
-            //                                //    }
-            //                                //}
-
-            //                                //#endregion
-            //                                //if (isRectangle) 
-            //                                boxList.Add(CvInvoke.MinAreaRect(approxContour));
-            //                           // }
-            //                        }
-            //                    }
-
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
-            //foreach (RotatedRect boxr in boxList)
-            //{
-            //    CvInvoke.Polylines(tempImg, Array.ConvertAll(boxr.GetVertices(), Point.Round), true,
-            //        new Bgr(Color.DarkOrange).MCvScalar, 2);
-            //}
-            //Mat pI = tempImg.Mat;
-            //stepData = AddData(stepData, pI, "Poly");
-            #endregion
             return View("Index", stepData);
         }
 
         public StepData StepsVideo(string uploadFile)
         {
-            StepData stepData = new StepData();
+            //StepData stepData = new StepData();
             ProcessCaptured processCaptured = new ProcessCaptured();
             Image<Bgra, Byte> imgg = null;
             Mat finalImg = new Mat();
@@ -301,7 +203,7 @@ namespace LPAR19.Controllers
                                             {
                                                 sb.Append(c.Text);
                                             }
-                                            if (sb.Length > 3 && sb.Length < 10 && !sb.ToString().Contains(' ') && (sb.ToString().Equals("LMN703") || sb.ToString().Equals("ARH001")))
+                                            if (sb.ToString().Length > 3 && sb.Length < 10 && !sb.ToString().Contains(' ') && (sb.ToString().Equals("LMN703") || sb.ToString().Equals("ARH001")))
                                                 stepData = AddData(stepData, m, i.ToString(), sb.ToString());
                                         }
                                     }
@@ -323,8 +225,11 @@ namespace LPAR19.Controllers
                 Image<Bgr, byte> img = image.ToImage<Bgr, byte>();
                 Tbytes = img.ToJpegData();
                 var exist = step.Images.Where(c => c.Text == text).ToList();
-                if (exist.Count<=0)
-                    step.Images.Add(new Images { Data = "data:image/jpg;base64," + Convert.ToBase64String(Tbytes, 0, Tbytes.Length), ImageName = Name,Text=text });
+                if (exist.Count <= 0)
+                {
+                    step.Images.Add(new Images { Data = "data:image/jpg;base64," + Convert.ToBase64String(Tbytes, 0, Tbytes.Length), ImageName = Name, Text = text });
+                    //step.Images.Add(new Images { Text = text });
+                }
             }
           return step;
         }
@@ -470,12 +375,12 @@ namespace LPAR19.Controllers
                         {
                             CvInvoke.WarpAffine(img, tmp1, rot, Size.Round(box.Size));
                         }
-                        Size approxSize = new Size(600, 600);
-                        double scale = Math.Min(approxSize.Width / box.Size.Width, approxSize.Height / box.Size.Height);
-                        Size newSize = new Size((int)Math.Round(box.Size.Width * scale), (int)Math.Round(box.Size.Height * scale));
-                        CvInvoke.Resize(tmp1, tmp2, newSize, 0, 0, Inter.Cubic);
-                        CvInvoke.Threshold(tmp2, thresh, 100, 255, ThresholdType.BinaryInv);
-                        mat.Add(thresh.Clone());
+                    Size approxSize = new Size(600, 600);
+                    double scale = Math.Min(approxSize.Width / box.Size.Width, approxSize.Height / box.Size.Height);
+                    Size newSize = new Size((int)Math.Round(box.Size.Width * scale), (int)Math.Round(box.Size.Height * scale));
+                    CvInvoke.Resize(tmp1, tmp2, newSize, 0, 0, Inter.Cubic);
+                    CvInvoke.Threshold(tmp2, thresh, 100, 255, ThresholdType.BinaryInv);
+                    mat.Add(tmp1.Clone());
                     }
                 //}
             }

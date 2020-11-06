@@ -1,30 +1,34 @@
 ﻿@model LPAR19.Models.StepData
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Video";
 }
 <script src="~/js/processing.js"></script>
 
 
 
-<h1>Index</h1>
+<h1>Video</h1>
 
 <div class="row">
     <div class="col-sm-12 col-md-6">
-        <video id="my-video" controls="true" width="700" height="400" crossorigin="anonymous">
+        <video id="my-video" controls="true" width="600" height="400" crossorigin="anonymous">
             @*<source src="http://jplayer.org/video/webm/Big_Buck_Bunny_Trailer.webm" type="video/webm">*@
             @*<source src="http://jplayer.org/video/m4v/Big_Buck_Bunny_Trailer.m4v" type="video/mp4">*@
-            <source src="~/video/ANPR.mp4" type="video/mp4">
+            @*<source src="~/video/ANPR.mp4" type="video/mp4">*@
+            <source src="~/video/v3.mp4" />
         </video>
-        <canvas id="my-canvas" width="700" height="400" style="display:none"></canvas>
+        <canvas id="my-canvas" width="600" height="400" style="display:none"></canvas>
     </div>
 </div>
 <div class="row">
-    <table id="tabData" class="tabel table-responsive">
+    @*<table id="tabData" class="tabel table-responsive">
         <tr>
            <th>Image</th>
            <th>Number</th>
         </tr>
-    </table>
+    </table>*@
+    <div id="divPrint" class="col-md-4">
+
+    </div>
 </div>
 
 <script>
@@ -66,23 +70,32 @@
 
 
     function DrawImg(data) {
-        const tab = document.getElementById("tabData");
-        const td = document.createElement("td");
-        const tr = document.createElement("tr");
+        //const tab = document.getElementById("tabData");
+        //const td = document.createElement("td");
+        //const tr = document.createElement("tr");
+        //for (var img in data.images) {
+        //    var imagem = document.createElement("img");
+        //    imagem.style = "width:480px;height=270px";
+        //    imagem.src = data.images[img].data;
+        //    var row = tr.cloneNode();
+        //    var col1 = td.cloneNode();
+        //    col1.appendChild(imagem);
+        //    var col2 = td.cloneNode();
+        //    console.log(data.images[img]);
+        //    col2.innerHTML = '<b>' + data.images[img].text;
+        //    row.appendChild(col1);
+        //    row.appendChild(col2);
+        //    tab.appendChild(row);
+        //}
+        var divP = document.getElementById("divPrint");
         for (var img in data.images) {
-            var imagem = document.createElement("img");
-            imagem.style = "width:480px;height=270px";
-            imagem.src = data.images[img].data;
-            var row = tr.cloneNode();
-            var col1 = td.cloneNode();
-            col1.appendChild(imagem);
-            var col2 = td.cloneNode();
-            console.log(data.images[img]);
-            col2.innerHTML = '<b>' + data.images[img].text;
-            row.appendChild(col1);
-            row.appendChild(col2);
-            tab.appendChild(row);
+
+            divP.innerHTML = '';
+            divP.innerHTML = "Last vehicle passed " + "<b>" + data.images[img].text + "</b>";
+            console.log(data.images[img].text);
         }
+
+
     }
 
     processor.doLoad();

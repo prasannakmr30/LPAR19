@@ -45,7 +45,7 @@ namespace LPAR19
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=PlateSteps}/{action=Index}/{id?}");
+                    pattern: "{controller=Newmethod}/{action=Index}/{id?}");
             });
         }
     }

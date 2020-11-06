@@ -9,3 +9,7 @@
             this.ctx1.putImageData(frame, 0, 0);
 =================================================================
             width="480" height="270"
+
+            && (sb.ToString().Equals("LMN703") || sb.ToString().Equals("ARH001")
+
+            && sb.Length < 10 && !sb.ToString().Contains(' ')

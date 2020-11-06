@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <UserSecretsId>76b4272c-a3fa-41f9-99ad-7791864c008e</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,5 +15,4 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.4" />
     <PackageReference Include="System.Drawing.Common" Version="4.7.0" />
   </ItemGroup>
-
 </Project>
