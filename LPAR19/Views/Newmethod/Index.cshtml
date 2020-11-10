@@ -9,16 +9,16 @@
 <h1>Video</h1>
 
 
-<div class="col-sm-12 col-md-6">
-        <video id="my-video" controls="true" width="600" height="400" muted crossorigin="anonymous">
-            @*<source src="http://jplayer.org/video/webm/Big_Buck_Bunny_Trailer.webm" type="video/webm">*@
-            @*<source src="http://jplayer.org/video/m4v/Big_Buck_Bunny_Trailer.m4v" type="video/mp4">*@
-            @*<source src="~/video/ANPR.mp4" type="video/mp4">*@
-            <source src="~/video/v3.mp4" />
-        </video>
+<div class="col-sm-8 col-md-6">
+    <video id="my-video" controls="true" width="600" height="400" muted crossorigin="anonymous">
+        @*<source src="http://jplayer.org/video/webm/Big_Buck_Bunny_Trailer.webm" type="video/webm">*@
+        @*<source src="~/video/Hk.mp4" type="video/mp4">*@
+        @*<source src="~/video/ANPR.mp4" type="video/mp4">*@
+        <source src="~/video/v3.mp4" />
+    </video>
         <canvas id="my-canvas" width="600" height="400" style="display:none"></canvas>
     </div>
-    <div class="col-sm-12 col-md-6" style="margin-left:20px">
+    <div class="col-sm-4 col-md-6" style="margin-left:20px">
         <img id="out" /><label id="plt"></label>
     </div>
 <div class="row">
@@ -62,6 +62,7 @@
             //var d = this.c1.getImageData();
             var d = this.c1.toDataURL();
             d = d.replace(/^data:image\/[a-z]+;base64,/, "");
+            console.log(d);
             $.post("Newmethod/StepsVideo", { uploadFile: d }, function (data) { DrawImg(data); });
             return;
         }
@@ -69,23 +70,23 @@
 
 
     function DrawImg(data) {
-    //    const tab = document.getElementById("tabData");
-    //    const td = document.createElement("td");
-    //    const tr = document.createElement("tr");
-    //    for (var img in data.images) {
-    //        var imagem = document.createElement("img");
-    //        //imagem.style = "width:480px;height=270px";
-    //        imagem.src = data.images[img].data;
-    //        var row = tr.cloneNode();
-    //        var col1 = td.cloneNode();
-    //        col1.appendChild(imagem);
-    //        var col2 = td.cloneNode();
-    //        console.log(data.images[img]);
-    //        col2.innerHTML = '<b>' + data.images[img].text;
-    //        row.appendChild(col1);
-    //        row.appendChild(col2);
-    //        tab.appendChild(row);
-    //    }
+        //const tab = document.getElementById("tabData");
+        //const td = document.createElement("td");
+        //const tr = document.createElement("tr");
+        //for (var img in data.images) {
+        //    var imagem = document.createElement("img");
+        //    //imagem.style = "width:480px;height=270px";
+        //    imagem.src = data.images[img].data;
+        //    var row = tr.cloneNode();
+        //    var col1 = td.cloneNode();
+        //    col1.appendChild(imagem);
+        //    var col2 = td.cloneNode();
+        //    console.log(data.images[img]);
+        //    col2.innerHTML = '<b>' + data.images[img].text;
+        //    row.appendChild(col1);
+        //    row.appendChild(col2);
+        //    tab.appendChild(row);
+        //}
         for (var img in data.images) {
             var imgo = document.getElementById("out");
             var plt = document.getElementById("plt");

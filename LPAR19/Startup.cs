@@ -19,6 +19,7 @@ namespace LPAR19
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -45,7 +46,7 @@ namespace LPAR19
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Newmethod}/{action=Index}/{id?}");
+                    pattern: "{controller=Camera}/{action=Index}/{id?}");
             });
         }
     }

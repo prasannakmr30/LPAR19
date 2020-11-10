@@ -13,3 +13,21 @@
             && (sb.ToString().Equals("LMN703") || sb.ToString().Equals("ARH001")
 
             && sb.Length < 10 && !sb.ToString().Contains(' ')
+
+
+             using(Mat mThresh=new Mat())
+                                                    {
+                                                        CvInvoke.CvtColor(m.Clone(),mThresh,ColorConversion.Bgr2Gray);
+                                                       
+                                                            _ocr.SetImage(mThresh);
+                                                            _ocr.Recognize();
+                                                            Tesseract.Character[] words = _ocr.GetCharacters();
+                                                            //string wor=words.
+                                                            StringBuilder sb = new StringBuilder();
+                                                            foreach (var c in words)
+                                                            {
+                                                                sb.Append(c.Text);
+                                                            }
+                                                            if (sb.ToString().Length > 3 && sb.Length <= 10)
+                                                            stepData = AddData(stepData, m, "", sb.ToString());
+                                                        }

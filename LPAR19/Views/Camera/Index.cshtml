@@ -2,13 +2,20 @@
 @{
     ViewData["Title"] = "Camera";
 }
+<style>
+    video {
+        width: 100%;
+        height: auto;
+    }
+</style>
 <script src="~/js/processing.js"></script>
-<h1>Camera</h1>
-    <div class="col-sm-12 col-md-6">
-        <video id="my-video" controls="true" width="600" height="400" crossorigin="anonymous">
-        </video>
-        <canvas id="my-canvas" width="600" height="400" style="display:none"></canvas>
-    </div>
+<div class="col-sm-12 col-md-6">
+    <video id="my-video" controls autoplay crossorigin="anonymous">
+    </video>
+</div>
+<div class="col-sm-12 col-md-6">
+    <canvas id="my-canvas" style="display:none"></canvas>
+</div>
 <div class="col-sm-12 col-md-6" style="margin-left:20px">
     <img id="out" /><label id="plt"></label>
 </div>
@@ -45,18 +52,21 @@
             this.video = document.getElementById("my-video");
             this.c1 = document.getElementById("my-canvas");
             this.ctx1 = this.c1.getContext("2d");
-            var self = this;
+            var self = this; 
 
             this.video.addEventListener("play", function () {
-                self.width = self.video.width;
-                self.height = self.video.height;
+                var vid = document.getElementById("my-video");
+                var can = document.getElementById("my-canvas");
+                can.width = vid.videoWidth;
+                can.height = vid.videoHeight; 
                 self.timerCallback();
             }, false);
         },
 
         computeFrame: function () {
-            this.ctx1.drawImage(this.video, 0, 0, this.width, this.height);
-            var frame = this.ctx1.getImageData(0, 0, this.width, this.height);
+            var vid = document.getElementById("my-video");
+            this.ctx1.drawImage(this.video, 0, 0, vid.videoWidth, vid.videoHeight);
+            var frame = this.ctx1.getImageData(0, 0, vid.videoWidth, vid.videoHeight);
             //var d = this.c1.getImageData();
             var d = this.c1.toDataURL();
             d = d.replace(/^data:image\/[a-z]+;base64,/, "");
@@ -67,23 +77,23 @@
 
 
     function DrawImg(data) {
-    //        const tab = document.getElementById("tabData");
-    //        const td = document.createElement("td");
-    //        const tr = document.createElement("tr");
-    //        for (var img in data.images) {
-    //            var imagem = document.createElement("img");
-    //            //imagem.style = "width:480px;height=270px";
-    //            imagem.src = data.images[img].data;
-    //            var row = tr.cloneNode();
-    //            var col1 = td.cloneNode();
-    //            col1.appendChild(imagem);
-    //            var col2 = td.cloneNode();
-    //            console.log(data.images[img]);
-    //            col2.innerHTML = '<b>' + data.images[img].text;
-    //            row.appendChild(col1);
-    //            row.appendChild(col2);
-    //            tab.appendChild(row);
-    //        }
+        //const tab = document.getElementById("tabData");
+        //const td = document.createElement("td");
+        //const tr = document.createElement("tr");
+        //for (var img in data.images) {
+        //    var imagem = document.createElement("img");
+        //    //imagem.style = "width:480px;height=270px";
+        //    imagem.src = data.images[img].data;
+        //    var row = tr.cloneNode();
+        //    var col1 = td.cloneNode();
+        //    col1.appendChild(imagem);
+        //    var col2 = td.cloneNode();
+        //    console.log(data.images[img]);
+        //    col2.innerHTML = '<b>' + data.images[img].text;
+        //    row.appendChild(col1);
+        //    row.appendChild(col2);
+        //    tab.appendChild(row);
+        //}
         for (var img in data.images) {
             var imgo = document.getElementById("out");
             var plt = document.getElementById("plt");

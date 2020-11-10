@@ -16,6 +16,7 @@ using Emgu.CV.Ocl;
 
 namespace LPAR19.Controllers
 {
+
     public class NewmethodController : Controller
     {
         public IActionResult Index()
@@ -68,24 +69,19 @@ namespace LPAR19.Controllers
                                                     _ocr.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890");
                                                     foreach (Mat m in roi)
                                                     {
-                                                    using(Mat mThresh=new Mat())
-                                                    {
-                                                        CvInvoke.CvtColor(m.Clone(),mThresh,ColorConversion.Bgr2Gray);
-                                                       
-                                                            _ocr.SetImage(mThresh);
-                                                            _ocr.Recognize();
-                                                            Tesseract.Character[] words = _ocr.GetCharacters();
-                                                            //string wor=words.
-                                                            StringBuilder sb = new StringBuilder();
-                                                            foreach (var c in words)
-                                                            {
-                                                                sb.Append(c.Text);
-                                                            }
-                                                            if (sb.ToString().Length > 3 && sb.Length <= 10)
-                                                            stepData = AddData(stepData, m, "", sb.ToString());
+                                                        _ocr.SetImage(m);
+                                                        _ocr.Recognize();
+                                                        Tesseract.Character[] words = _ocr.GetCharacters();
+                                                        //string wor=words.
+                                                        StringBuilder sb = new StringBuilder();
+                                                        foreach (var c in words)
+                                                        {
+                                                            sb.Append(c.Text);
                                                         }
+                                                        string strTemp = sb.ToString().Replace(" ", "");
+                                                        if (strTemp.ToString().Length > 3 && strTemp.Length <= 10)
+                                                            stepData = AddData(stepData, m, "", strTemp);
                                                     }
-                                               
                                                 }
                                             }
                                         }
@@ -288,35 +284,63 @@ namespace LPAR19.Controllers
                     box.Angle -= 90.0f;
                 }
                 //double whRatio = (double)box.Size.Width / box.Size.Height;
-                //if (!(2.0 < whRatio && whRatio < 8.0))
-                //{
-                using (Mat thresh = new Mat())
-                using (Mat tmp1 = new Mat())
-                using (Mat tmp2 = new Mat())
-                    using(Mat tmp3 =new Mat())
-                    using(Mat tmp4=new Mat())
+                if (box.Size.Width > box.Size.Height)
                 {
-                    PointF[] srcCorners = box.GetVertices();
-                    PointF[] destCorners = new PointF[] { new PointF(0, box.Size.Height - 1), new PointF(0, 0), new PointF(box.Size.Width - 1, 0), new PointF(box.Size.Width - 1, box.Size.Height - 1) };
-
-                    using (Mat rot = CvInvoke.GetAffineTransform(srcCorners, destCorners))
+                    using (Mat thresh = new Mat())
+                    using (Mat tmp1 = new Mat())
+                    using (Mat tmp2 = new Mat())
+                    using (Mat tmp3 = new Mat())
+                    using (Mat tmp4 = new Mat())
+                    using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                     {
-                        CvInvoke.WarpAffine(img, tmp1, rot, Size.Round(box.Size));
+
+                        PointF[] srcCorners = box.GetVertices();
+                        PointF[] destCorners = new PointF[] { new PointF(0, box.Size.Height - 1), new PointF(0, 0), new PointF(box.Size.Width - 1, 0), new PointF(box.Size.Width - 1, box.Size.Height - 1) };
+
+                        using (Mat rot = CvInvoke.GetAffineTransform(srcCorners, destCorners))
+                        {
+                            CvInvoke.WarpAffine(img, tmp1, rot, Size.Round(box.Size));
+                        }
+
+                        Size approxSize = new Size(300, 300);
+                        double scale = Math.Min(approxSize.Width / box.Size.Width, approxSize.Height / box.Size.Height);
+                        Size newSize = new Size((int)Math.Round(box.Size.Width * scale), (int)Math.Round(box.Size.Height * scale));
+                        CvInvoke.Resize(tmp1, tmp2, newSize, 0, 0, Inter.Lanczos4);
+
+                        //CvInvoke.CvtColor(tmp2, tmp3, ColorConversion.Bgr2Gray);
+
+                        //CvInvoke.AdaptiveThreshold(tmp3, thresh, 255, AdaptiveThresholdType.GaussianC, ThresholdType.Binary, 11, 2);
+                        //Mat org = tmp2.Clone();
+                        //CvInvoke.Canny(thresh, tmp4, 100, 50, 7);
+                        //CvInvoke.FindContours(tmp4, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+                        //int count = contours.Size;
+                        ////VectorOfVectorOfPoint points = new VectorOfVectorOfPoint();
+                        //List<Rectangle> points = new List<Rectangle>();
+                        //for (int i = 0; i < count; i++)
+                        //{
+                        //    using (VectorOfPoint approxContour = new VectorOfPoint())
+                        //    {
+                        //        using (VectorOfPoint rectPoly = new VectorOfPoint())
+                        //        {
+                        //            if (CvInvoke.ContourArea(contours[i], false) > 20)
+                        //            {
+
+                        //                CvInvoke.ApproxPolyDP(contours[i], rectPoly, CvInvoke.ArcLength(contours[i], true) * 0.05, true);
+                        //                CvInvoke.ConvexHull(rectPoly, approxContour);                                   
+                        //                //points.Push();
+                        //                points.Add(CvInvoke.BoundingRectangle(approxContour));
+                        //                CvInvoke.Polylines(org, Array.ConvertAll(CvInvoke.MinAreaRect(approxContour).GetVertices(), Point.Round), true,new Bgr(Color.DarkOrange).MCvScalar, 2);
+                        //                //CvInvoke.DrawContours(org, approxContour, -1, new Bgr(Color.DarkOrange).MCvScalar, 2);
+
+                        //            }
+                        //        }
+                        //    }
+                        //}
+                        //CvInvoke.DrawContours(org, points, -1, new Bgr(Color.DarkOrange).MCvScalar, 2);
+
+                        mat.Add(tmp2.Clone());
                     }
-                    
-                    //CvInvoke.CvtColor(tmp1, tmp2, ColorConversion.Bgr2Gray);
-
-                    //Size approxSize = new Size(500, 500);
-                    //double scale = Math.Min(approxSize.Width / box.Size.Width, approxSize.Height / box.Size.Height);
-                    //Size newSize = new Size((int)Math.Round(box.Size.Width * scale), (int)Math.Round(box.Size.Height * scale));
-                    //CvInvoke.Resize(tmp1, tmp3, newSize, 0, 0, Inter.Cubic);
-
-                    //CvInvoke.AdaptiveThreshold(tmp3, thresh,255,AdaptiveThresholdType.GaussianC,ThresholdType.Binary,11,2);
-                    //CvInvoke.BitwiseNot(thresh, tmp4);
-                    
-                    mat.Add(tmp1.Clone());
                 }
-                //}
             }
             return mat;
         }
